@@ -108,7 +108,7 @@ class SensorLoggingService : Service(), SensorEventListener {
         screenStateReceiver?.let {
             try { unregisterReceiver(it) } catch (_: Exception) {}
         }
-        scope.launch {
+        kotlinx.coroutines.runBlocking {
             eventLogger?.flush()
             eventLogger?.close()
         }
