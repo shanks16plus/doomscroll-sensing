@@ -26,6 +26,7 @@ class UsageTracker(
 
     var foregroundApp: String? = null
         private set
+    private var currentActivityClass: String? = null
 
     fun start() {
         pollJob = scope.launch {
@@ -40,7 +41,8 @@ class UsageTracker(
         pollJob?.cancel()
     }
 
-    fun onForegroundAppFromAccessibility(packageName: String) {
+    fun onForegroundAppFromAccessibility(packageName: String, activityClass: String? = null) {
+        currentActivityClass = activityClass
         handleAppChange(packageName)
     }
 
@@ -67,7 +69,8 @@ class UsageTracker(
             val bgEvent = SensorEvent.AppSession(
                 timestampMs = ts, participantId = participantId,
                 event = AppSessionEvent.BACKGROUND,
-                packageName = oldPkg, category = classifier.classify(oldPkg)
+                packageName = oldPkg, category = classifier.classify(oldPkg),
+                activityClass = currentActivityClass
             )
             scope.launch { logger.log(bgEvent) }
         }
@@ -78,7 +81,8 @@ class UsageTracker(
         val fgEvent = SensorEvent.AppSession(
             timestampMs = ts, participantId = participantId,
             event = AppSessionEvent.FOREGROUND,
-            packageName = newPackage, category = classifier.classify(newPackage)
+            packageName = newPackage, category = classifier.classify(newPackage),
+            activityClass = currentActivityClass
         )
         scope.launch { logger.log(fgEvent) }
     }

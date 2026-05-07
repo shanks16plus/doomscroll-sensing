@@ -27,7 +27,8 @@ sealed class SensorEvent {
         @Json(name = "participant_id") override val participantId: String,
         val event: AppSessionEvent,
         @Json(name = "package_name") val packageName: String,
-        val category: AppCategory
+        val category: AppCategory,
+        @Json(name = "activity_class") val activityClass: String? = null
     ) : SensorEvent()
 
     @JsonClass(generateAdapter = true)
@@ -36,7 +37,8 @@ sealed class SensorEvent {
         @Json(name = "participant_id") override val participantId: String,
         val event: ScrollEventType,
         val direction: ScrollDirection,
-        @Json(name = "foreground_app") val foregroundApp: String
+        @Json(name = "foreground_app") val foregroundApp: String,
+        @Json(name = "dwell_time_ms") val dwellTimeMs: Long? = null
     ) : SensorEvent()
 
     @JsonClass(generateAdapter = true)
@@ -44,7 +46,9 @@ sealed class SensorEvent {
         @Json(name = "timestamp_ms") override val timestampMs: Long,
         @Json(name = "participant_id") override val participantId: String,
         @Json(name = "tap_type") val tapType: TapType,
-        @Json(name = "foreground_app") val foregroundApp: String
+        @Json(name = "foreground_app") val foregroundApp: String,
+        @Json(name = "interaction_type") val interactionType: InteractionType? = null,
+        @Json(name = "view_description") val viewDescription: String? = null
     ) : SensorEvent()
 
     @JsonClass(generateAdapter = true)

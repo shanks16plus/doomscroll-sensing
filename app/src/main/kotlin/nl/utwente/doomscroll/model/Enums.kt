@@ -18,3 +18,7 @@ enum class AppCategory {
 enum class PauseReason {
     PASSWORD_FIELD, KEYGUARD, SENSITIVE_APP, USER_REQUEST
 }
+
+enum class InteractionType {
+    LIKE, DOUBLE_TAP_LIKE, COMMENT_OPEN, SHARE, FOLLOW, SAVE, OTHER
+}

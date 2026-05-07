@@ -72,6 +72,61 @@ class SensorEventSerializationTest {
     }
 
     @Test
+    fun tapEventWithInteraction() {
+        val event = SensorEvent.TapEvent(
+            ts, pid,
+            tapType = TapType.SINGLE,
+            foregroundApp = "com.instagram.android",
+            interactionType = InteractionType.LIKE,
+            viewDescription = "Like"
+        )
+        val result = roundTrip(event) as SensorEvent.TapEvent
+        assertEquals(InteractionType.LIKE, result.interactionType)
+        assertEquals("Like", result.viewDescription)
+    }
+
+    @Test
+    fun doubleTapLike() {
+        val event = SensorEvent.TapEvent(
+            ts, pid,
+            tapType = TapType.DOUBLE,
+            foregroundApp = "com.instagram.android",
+            interactionType = InteractionType.DOUBLE_TAP_LIKE
+        )
+        val result = roundTrip(event) as SensorEvent.TapEvent
+        assertEquals(TapType.DOUBLE, result.tapType)
+        assertEquals(InteractionType.DOUBLE_TAP_LIKE, result.interactionType)
+    }
+
+    @Test
+    fun scrollEventWithDwellTime() {
+        val event = SensorEvent.ScrollEvent(
+            ts, pid,
+            event = ScrollEventType.SCROLL_START,
+            direction = ScrollDirection.DOWN,
+            foregroundApp = "com.instagram.android",
+            dwellTimeMs = 3500
+        )
+        val result = roundTrip(event) as SensorEvent.ScrollEvent
+        assertEquals(3500L, result.dwellTimeMs)
+    }
+
+    @Test
+    fun appSessionWithActivityClass() {
+        val event = SensorEvent.AppSession(
+            ts, pid,
+            event = AppSessionEvent.FOREGROUND,
+            packageName = "com.google.android.youtube",
+            category = AppCategory.ENTERTAINMENT,
+            activityClass = "com.google.android.youtube.shorts.ui.ShortsSfvActivity"
+        )
+        val result = roundTrip(event) as SensorEvent.AppSession
+        assertEquals("com.google.android.youtube.shorts.ui.ShortsSfvActivity", result.activityClass)
+        val json = EventJsonAdapter.toJson(event)
+        assert(json.contains("\"activity_class\"")) { "Missing activity_class: $json" }
+    }
+
+    @Test
     fun accelerometer() {
         val event = SensorEvent.Accelerometer(ts, pid, x = 0.1f, y = 9.8f, z = -0.3f)
         val result = roundTrip(event) as SensorEvent.Accelerometer
