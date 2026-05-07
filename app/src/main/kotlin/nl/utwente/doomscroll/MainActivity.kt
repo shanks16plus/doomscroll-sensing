@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import nl.utwente.doomscroll.service.ScreenStateReceiver
 import nl.utwente.doomscroll.service.SensorLoggingService
+import nl.utwente.doomscroll.storage.ExportManager
 import nl.utwente.doomscroll.util.Preferences
 import java.util.UUID
 
@@ -39,6 +40,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnAccessibility: Button
     private lateinit var btnNotifications: Button
     private lateinit var btnBattery: Button
+    private lateinit var btnExport: Button
+    private lateinit var textExportResult: TextView
 
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { updateUI() }
@@ -59,6 +62,8 @@ class MainActivity : AppCompatActivity() {
         btnAccessibility = findViewById(R.id.btn_accessibility)
         btnNotifications = findViewById(R.id.btn_notifications)
         btnBattery = findViewById(R.id.btn_battery)
+        btnExport = findViewById(R.id.btn_export)
+        textExportResult = findViewById(R.id.text_export_result)
 
         btnUsageStats.setOnClickListener {
             startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
@@ -87,6 +92,19 @@ class MainActivity : AppCompatActivity() {
                 startLogging()
             }
             updateUI()
+        }
+
+        btnExport.setOnClickListener {
+            btnExport.isEnabled = false
+            textExportResult.text = "Exporting…"
+            val result = ExportManager(this).export()
+            if (result.exported == 0 && result.skipped == 0) {
+                textExportResult.text = "No log files found."
+            } else {
+                textExportResult.text = "Exported ${result.exported} file(s), " +
+                        "skipped ${result.skipped}.\nPath: ${result.path}"
+            }
+            btnExport.isEnabled = true
         }
     }
 

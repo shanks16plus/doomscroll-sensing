@@ -79,5 +79,20 @@
             android:textSize="18sp"
             android:enabled="false" />
 
+        <Button
+            android:id="@+id/btn_export"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Export Data"
+            android:textSize="16sp"
+            android:layout_marginTop="24dp" />
+
+        <TextView
+            android:id="@+id/text_export_result"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:layout_marginTop="8dp" />
+
     </LinearLayout>
 </ScrollView>
