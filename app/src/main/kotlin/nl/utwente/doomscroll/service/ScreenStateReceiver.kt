@@ -14,7 +14,9 @@ import nl.utwente.doomscroll.storage.EventLogger
 
 class ScreenStateReceiver(
     private val participantId: String,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val onScreenOn: (() -> Unit)? = null,
+    private val onScreenOff: (() -> Unit)? = null
 ) : BroadcastReceiver() {
 
     companion object {
@@ -32,7 +34,7 @@ class ScreenStateReceiver(
         when (intent.action) {
             Intent.ACTION_SCREEN_ON -> {
                 logScreenState(logger, ts, ScreenState.ON)
-                // Screen is on but keyguard may still be active
+                onScreenOn?.invoke()
                 val km = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
                 if (km.isKeyguardLocked) {
                     scope.launch { logger.pause(PauseReason.KEYGUARD) }
@@ -40,6 +42,7 @@ class ScreenStateReceiver(
             }
             Intent.ACTION_SCREEN_OFF -> {
                 logScreenState(logger, ts, ScreenState.OFF)
+                onScreenOff?.invoke()
                 scope.launch { logger.pause(PauseReason.KEYGUARD) }
             }
             Intent.ACTION_USER_PRESENT -> {

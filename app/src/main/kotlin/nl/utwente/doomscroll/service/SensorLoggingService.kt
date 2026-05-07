@@ -12,11 +12,12 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.IBinder
-import android.os.PowerManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import nl.utwente.doomscroll.R
 import nl.utwente.doomscroll.storage.EventLogger
@@ -42,11 +43,12 @@ class SensorLoggingService : Service(), SensorEventListener {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private lateinit var sensorManager: SensorManager
-    private var wakeLock: PowerManager.WakeLock? = null
     private var eventLogger: EventLogger? = null
     private var usageTracker: UsageTracker? = null
     private var screenStateReceiver: ScreenStateReceiver? = null
+    private var flushJob: kotlinx.coroutines.Job? = null
     private var participantId: String = ""
+    private var sensorsRegistered = false
 
     override fun onCreate() {
         super.onCreate()
@@ -57,7 +59,6 @@ class SensorLoggingService : Service(), SensorEventListener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         participantId = intent?.getStringExtra(EXTRA_PARTICIPANT_ID) ?: return START_NOT_STICKY
         startForeground(NOTIFICATION_ID, buildNotification())
-        acquireWakeLock()
 
         eventLogger = EventLogger(this, participantId)
         EventLoggerHolder.logger = eventLogger
@@ -66,18 +67,44 @@ class SensorLoggingService : Service(), SensorEventListener {
         UsageTrackerHolder.tracker = usageTracker
         usageTracker!!.start()
 
-        screenStateReceiver = ScreenStateReceiver(participantId, scope)
+        screenStateReceiver = ScreenStateReceiver(participantId, scope, ::onScreenOn, ::onScreenOff)
         registerReceiver(screenStateReceiver, ScreenStateReceiver.intentFilter())
 
+        startPeriodicFlush()
         registerSensors()
         return START_STICKY
     }
 
     private fun registerSensors() {
+        if (sensorsRegistered) return
         val accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         val gyro = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
-        accel?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
-        gyro?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
+        accel?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL) }
+        gyro?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL) }
+        sensorsRegistered = true
+    }
+
+    private fun unregisterSensors() {
+        if (!sensorsRegistered) return
+        sensorManager.unregisterListener(this)
+        sensorsRegistered = false
+    }
+
+    private fun onScreenOn() {
+        registerSensors()
+    }
+
+    private fun onScreenOff() {
+        unregisterSensors()
+    }
+
+    private fun startPeriodicFlush() {
+        flushJob = scope.launch {
+            while (isActive) {
+                delay(5 * 60 * 1000L)
+                eventLogger?.flush()
+            }
+        }
     }
 
     override fun onSensorChanged(event: SensorEvent) {
@@ -104,7 +131,8 @@ class SensorLoggingService : Service(), SensorEventListener {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        sensorManager.unregisterListener(this)
+        flushJob?.cancel()
+        unregisterSensors()
         usageTracker?.stop()
         screenStateReceiver?.let {
             try { unregisterReceiver(it) } catch (_: Exception) {}
@@ -114,17 +142,9 @@ class SensorLoggingService : Service(), SensorEventListener {
             eventLogger?.close()
         }
         scope.cancel()
-        wakeLock?.release()
         EventLoggerHolder.logger = null
         UsageTrackerHolder.tracker = null
         super.onDestroy()
-    }
-
-    private fun acquireWakeLock() {
-        val pm = getSystemService(POWER_SERVICE) as PowerManager
-        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "doomscroll:sensor").apply {
-            acquire(10 * 60 * 60 * 1000L)
-        }
     }
 
     private fun createNotificationChannel() {

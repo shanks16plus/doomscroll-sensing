@@ -84,11 +84,18 @@ class MainActivity : AppCompatActivity() {
 
         btnToggle.setOnClickListener {
             if (prefs.loggingEnabled) {
-                stopLogging()
-            } else {
-                startLogging()
+                // Ignore single tap when logging — require long-press to stop
+                return@setOnClickListener
             }
+            startLogging()
             updateUI()
+        }
+        btnToggle.setOnLongClickListener {
+            if (prefs.loggingEnabled) {
+                stopLogging()
+                updateUI()
+            }
+            true
         }
 
         btnPause.setOnClickListener {
@@ -159,7 +166,7 @@ class MainActivity : AppCompatActivity() {
                 textStatus.text = "Status: LOGGING ACTIVE"
                 btnPause.text = "Pause Logging"
             }
-            btnToggle.text = "Stop Logging"
+            btnToggle.text = "Long-press to Stop"
             btnPause.visibility = android.view.View.VISIBLE
         } else {
             textStatus.text = if (allGranted) "Status: ready to start" else "Status: grant all permissions first"
