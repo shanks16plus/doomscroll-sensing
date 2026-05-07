@@ -46,8 +46,10 @@ app/src/main/kotlin/nl/utwente/doomscroll/
 app/src/main/assets/
   └── app_categories.json
 docs/
-  ├── SCHEMA.docx       # Data schema specification
-  └── ETHICS.docx       # Privacy and ethics commitments
+  ├── SCHEMA.docx              # Data schema specification
+  ├── ETHICS.docx              # Privacy and ethics commitments
+  ├── SETUP.md                 # Researcher setup and data collection guide
+  └── PARTICIPANT_GUIDE.md     # Handout for study participants
 tools/
   └── synthetic_data_generator.py
 ```
