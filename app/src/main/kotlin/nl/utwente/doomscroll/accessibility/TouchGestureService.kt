@@ -19,37 +19,6 @@ import nl.utwente.doomscroll.service.EventLoggerHolder
 
 class TouchGestureService : AccessibilityService() {
 
-    companion object {
-        private val SOCIAL_APPS = setOf(
-            "com.instagram.android",
-            "com.zhiliaoapp.musically",
-            "com.google.android.youtube",
-            "com.twitter.android",
-            "com.reddit.frontpage",
-            "com.snapchat.android",
-            "com.facebook.katana",
-            "com.facebook.orca"
-        )
-
-        private val LIKE_KEYWORDS = setOf(
-            "like", "unlike", "love", "heart", "favourite", "favorite"
-        )
-        private val COMMENT_KEYWORDS = setOf(
-            "comment", "reply", "add a comment", "write a comment"
-        )
-        private val SHARE_KEYWORDS = setOf(
-            "share", "send", "repost", "retweet"
-        )
-        private val FOLLOW_KEYWORDS = setOf(
-            "follow", "subscribe"
-        )
-        private val SAVE_KEYWORDS = setOf(
-            "save", "bookmark", "add to collection"
-        )
-
-        private const val DOUBLE_TAP_WINDOW_MS = 400L
-    }
-
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var participantId: String = ""
     private var currentForegroundApp: String = ""
@@ -105,7 +74,7 @@ class TouchGestureService : AccessibilityService() {
                     scope.launch { logger.resume(PauseReason.PASSWORD_FIELD) }
                 }
 
-                if (nowEditText && !nowPassword && currentForegroundApp in SOCIAL_APPS) {
+                if (nowEditText && !nowPassword && currentForegroundApp in InteractionClassifier.SOCIAL_APPS) {
                     val tapEvent = SensorEvent.TapEvent(
                         timestampMs = ts, participantId = participantId,
                         tapType = TapType.SINGLE,
@@ -121,7 +90,7 @@ class TouchGestureService : AccessibilityService() {
 
             AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
                 val direction = inferScrollDirection(event)
-                val dwellTime = if (lastScrollTimestamp > 0) ts - lastScrollTimestamp else null
+                val dwellTime = InteractionClassifier.computeDwellTime(ts, lastScrollTimestamp)
 
                 val scrollStart = SensorEvent.ScrollEvent(
                     timestampMs = ts, participantId = participantId,
@@ -144,24 +113,13 @@ class TouchGestureService : AccessibilityService() {
             }
 
             AccessibilityEvent.TYPE_VIEW_CLICKED -> {
-                if (currentForegroundApp in SOCIAL_APPS) {
+                if (currentForegroundApp in InteractionClassifier.SOCIAL_APPS) {
                     val node = event.source
                     val description = getViewDescription(node)
-                    val interaction = classifyInteraction(description)
-
-                    val isDoubleTap = (ts - lastClickTimestamp < DOUBLE_TAP_WINDOW_MS) &&
-                            (currentForegroundApp == lastClickApp)
-
-                    val tapType: TapType
-                    val finalInteraction: InteractionType
-
-                    if (isDoubleTap) {
-                        tapType = TapType.DOUBLE
-                        finalInteraction = InteractionType.DOUBLE_TAP_LIKE
-                    } else {
-                        tapType = TapType.SINGLE
-                        finalInteraction = interaction
-                    }
+                    val interaction = InteractionClassifier.classifyInteraction(description)
+                    val (tapType, finalInteraction) = InteractionClassifier.resolveDoubleTap(
+                        ts, lastClickTimestamp, currentForegroundApp, lastClickApp, interaction
+                    )
 
                     val tapEvent = SensorEvent.TapEvent(
                         timestampMs = ts, participantId = participantId,
@@ -197,19 +155,6 @@ class TouchGestureService : AccessibilityService() {
         val viewId = node.viewIdResourceName
         if (viewId != null) return viewId
         return node.className?.toString()
-    }
-
-    private fun classifyInteraction(description: String?): InteractionType {
-        if (description == null) return InteractionType.OTHER
-        val lower = description.lowercase()
-        return when {
-            LIKE_KEYWORDS.any { lower.contains(it) } -> InteractionType.LIKE
-            COMMENT_KEYWORDS.any { lower.contains(it) } -> InteractionType.COMMENT_OPEN
-            SHARE_KEYWORDS.any { lower.contains(it) } -> InteractionType.SHARE
-            FOLLOW_KEYWORDS.any { lower.contains(it) } -> InteractionType.FOLLOW
-            SAVE_KEYWORDS.any { lower.contains(it) } -> InteractionType.SAVE
-            else -> InteractionType.OTHER
-        }
     }
 
     private fun inferScrollDirection(event: AccessibilityEvent): ScrollDirection {
