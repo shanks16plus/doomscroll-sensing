@@ -155,25 +155,41 @@ class TouchGestureService : AccessibilityService() {
     private fun getViewDescription(node: AccessibilityNodeInfo?): String? {
         if (node == null) return null
         node.contentDescription?.toString()?.let { return it }
-        // Traverse children — click events often land on a wrapper, not the labeled child
+        // Traverse children (2 levels deep) — social apps nest buttons inside containers
+        findDescriptionInChildren(node, 2)?.let { return it }
+        // Try parent chain (2 levels up) — click may land on icon inside a labeled button
+        findDescriptionInParents(node, 2)?.let { return it }
+        node.viewIdResourceName?.let { return it }
+        return node.className?.toString()
+    }
+
+    private fun findDescriptionInChildren(node: AccessibilityNodeInfo, depth: Int): String? {
+        if (depth <= 0) return null
         for (i in 0 until node.childCount) {
             val child = node.getChild(i) ?: continue
             child.contentDescription?.toString()?.let {
                 child.recycle()
                 return it
             }
-            child.recycle()
-        }
-        // Try parent — sometimes the click lands on the icon inside a labeled button
-        node.parent?.let { parent ->
-            parent.contentDescription?.toString()?.let {
-                parent.recycle()
+            findDescriptionInChildren(child, depth - 1)?.let {
+                child.recycle()
                 return it
             }
-            parent.recycle()
+            child.recycle()
         }
-        node.viewIdResourceName?.let { return it }
-        return node.className?.toString()
+        return null
+    }
+
+    private fun findDescriptionInParents(node: AccessibilityNodeInfo, depth: Int): String? {
+        if (depth <= 0) return null
+        val parent = node.parent ?: return null
+        parent.contentDescription?.toString()?.let {
+            parent.recycle()
+            return it
+        }
+        val result = findDescriptionInParents(parent, depth - 1)
+        parent.recycle()
+        return result
     }
 
     private fun inferScrollDirection(event: AccessibilityEvent): ScrollDirection {

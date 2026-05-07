@@ -149,7 +149,7 @@ class SensorLoggingService : Service(), SensorEventListener {
 
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
-            CHANNEL_ID, "Data Collection", NotificationManager.IMPORTANCE_LOW
+            CHANNEL_ID, "Data Collection", NotificationManager.IMPORTANCE_MIN
         ).apply { description = "Active while logging sensor data" }
         (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
     }
