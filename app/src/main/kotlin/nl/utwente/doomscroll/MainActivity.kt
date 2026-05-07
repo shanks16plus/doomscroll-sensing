@@ -5,7 +5,6 @@ import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -18,10 +17,8 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import nl.utwente.doomscroll.service.ScreenStateReceiver
+import nl.utwente.doomscroll.model.PauseReason
+import nl.utwente.doomscroll.service.EventLoggerHolder
 import nl.utwente.doomscroll.service.SensorLoggingService
 import nl.utwente.doomscroll.storage.ExportManager
 import nl.utwente.doomscroll.util.Preferences
@@ -30,8 +27,6 @@ import java.util.UUID
 class MainActivity : AppCompatActivity() {
 
     private lateinit var prefs: Preferences
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private var screenStateReceiver: ScreenStateReceiver? = null
 
     private lateinit var textParticipantId: TextView
     private lateinit var textStatus: TextView
@@ -40,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnAccessibility: Button
     private lateinit var btnNotifications: Button
     private lateinit var btnBattery: Button
+    private lateinit var btnPause: Button
     private lateinit var btnExport: Button
     private lateinit var textExportResult: TextView
 
@@ -62,6 +58,7 @@ class MainActivity : AppCompatActivity() {
         btnAccessibility = findViewById(R.id.btn_accessibility)
         btnNotifications = findViewById(R.id.btn_notifications)
         btnBattery = findViewById(R.id.btn_battery)
+        btnPause = findViewById(R.id.btn_pause)
         btnExport = findViewById(R.id.btn_export)
         textExportResult = findViewById(R.id.text_export_result)
 
@@ -94,6 +91,16 @@ class MainActivity : AppCompatActivity() {
             updateUI()
         }
 
+        btnPause.setOnClickListener {
+            val logger = EventLoggerHolder.logger ?: return@setOnClickListener
+            if (logger.isPaused) {
+                kotlinx.coroutines.runBlocking { logger.resume(PauseReason.USER_REQUEST) }
+            } else {
+                kotlinx.coroutines.runBlocking { logger.pause(PauseReason.USER_REQUEST) }
+            }
+            updateUI()
+        }
+
         btnExport.setOnClickListener {
             btnExport.isEnabled = false
             textExportResult.text = "Exporting…"
@@ -117,18 +124,11 @@ class MainActivity : AppCompatActivity() {
         val pid = prefs.participantId ?: return
         prefs.loggingEnabled = true
         SensorLoggingService.start(this, pid)
-
-        screenStateReceiver = ScreenStateReceiver(pid, scope)
-        registerReceiver(screenStateReceiver, ScreenStateReceiver.intentFilter())
     }
 
     private fun stopLogging() {
         prefs.loggingEnabled = false
         SensorLoggingService.stop(this)
-        screenStateReceiver?.let {
-            try { unregisterReceiver(it) } catch (_: Exception) {}
-        }
-        screenStateReceiver = null
     }
 
     private fun updateUI() {
@@ -150,12 +150,21 @@ class MainActivity : AppCompatActivity() {
         val allGranted = usageOk && accessOk && notifOk && batteryOk
         btnToggle.isEnabled = allGranted
 
+        val logger = EventLoggerHolder.logger
         if (prefs.loggingEnabled) {
-            textStatus.text = "Status: LOGGING ACTIVE"
+            if (logger?.isPaused == true) {
+                textStatus.text = "Status: PAUSED by participant"
+                btnPause.text = "Resume Logging"
+            } else {
+                textStatus.text = "Status: LOGGING ACTIVE"
+                btnPause.text = "Pause Logging"
+            }
             btnToggle.text = "Stop Logging"
+            btnPause.visibility = android.view.View.VISIBLE
         } else {
             textStatus.text = if (allGranted) "Status: ready to start" else "Status: grant all permissions first"
             btnToggle.text = "Start Logging"
+            btnPause.visibility = android.view.View.GONE
         }
     }
 

@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -43,6 +44,8 @@ class SensorLoggingService : Service(), SensorEventListener {
     private lateinit var sensorManager: SensorManager
     private var wakeLock: PowerManager.WakeLock? = null
     private var eventLogger: EventLogger? = null
+    private var usageTracker: UsageTracker? = null
+    private var screenStateReceiver: ScreenStateReceiver? = null
     private var participantId: String = ""
 
     override fun onCreate() {
@@ -58,6 +61,12 @@ class SensorLoggingService : Service(), SensorEventListener {
 
         eventLogger = EventLogger(this, participantId)
         EventLoggerHolder.logger = eventLogger
+
+        usageTracker = UsageTracker(this, participantId, eventLogger!!, scope)
+        usageTracker!!.start()
+
+        screenStateReceiver = ScreenStateReceiver(participantId, scope)
+        registerReceiver(screenStateReceiver, ScreenStateReceiver.intentFilter())
 
         registerSensors()
         return START_STICKY
@@ -95,6 +104,10 @@ class SensorLoggingService : Service(), SensorEventListener {
 
     override fun onDestroy() {
         sensorManager.unregisterListener(this)
+        usageTracker?.stop()
+        screenStateReceiver?.let {
+            try { unregisterReceiver(it) } catch (_: Exception) {}
+        }
         scope.launch {
             eventLogger?.flush()
             eventLogger?.close()
@@ -108,7 +121,7 @@ class SensorLoggingService : Service(), SensorEventListener {
     private fun acquireWakeLock() {
         val pm = getSystemService(POWER_SERVICE) as PowerManager
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "doomscroll:sensor").apply {
-            acquire()
+            acquire(10 * 60 * 60 * 1000L)
         }
     }
 
