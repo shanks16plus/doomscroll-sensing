@@ -1,0 +1,20 @@
+package nl.utwente.doomscroll.model
+
+enum class ScreenState { ON, OFF, UNLOCKED }
+
+enum class AppSessionEvent { FOREGROUND, BACKGROUND }
+
+enum class ScrollEventType { SCROLL_START, SCROLL_END }
+
+enum class ScrollDirection { UP, DOWN, NONE }
+
+enum class TapType { SINGLE, DOUBLE }
+
+enum class AppCategory {
+    SOCIAL, NEWS, BROWSER, MESSAGING,
+    PRODUCTIVE, ENTERTAINMENT, UTILITY, OTHER
+}
+
+enum class PauseReason {
+    PASSWORD_FIELD, KEYGUARD, SENSITIVE_APP, USER_REQUEST
+}

@@ -39,9 +39,11 @@ dependencies {
     implementation(libs.androidx.security.crypto)
     implementation(libs.moshi)
     implementation(libs.moshi.kotlin)
+    implementation(libs.moshi.adapters)
     implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit)
     testImplementation(libs.moshi)
     testImplementation(libs.moshi.kotlin)
+    testImplementation(libs.moshi.adapters)
 }
