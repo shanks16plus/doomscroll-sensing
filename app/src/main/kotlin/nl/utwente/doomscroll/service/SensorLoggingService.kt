@@ -63,6 +63,7 @@ class SensorLoggingService : Service(), SensorEventListener {
         EventLoggerHolder.logger = eventLogger
 
         usageTracker = UsageTracker(this, participantId, eventLogger!!, scope)
+        UsageTrackerHolder.tracker = usageTracker
         usageTracker!!.start()
 
         screenStateReceiver = ScreenStateReceiver(participantId, scope)
@@ -115,6 +116,7 @@ class SensorLoggingService : Service(), SensorEventListener {
         scope.cancel()
         wakeLock?.release()
         EventLoggerHolder.logger = null
+        UsageTrackerHolder.tracker = null
         super.onDestroy()
     }
 
@@ -144,4 +146,9 @@ class SensorLoggingService : Service(), SensorEventListener {
 object EventLoggerHolder {
     @Volatile
     var logger: EventLogger? = null
+}
+
+object UsageTrackerHolder {
+    @Volatile
+    var tracker: UsageTracker? = null
 }

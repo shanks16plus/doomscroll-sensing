@@ -16,6 +16,7 @@ import nl.utwente.doomscroll.model.ScrollEventType
 import nl.utwente.doomscroll.model.SensorEvent
 import nl.utwente.doomscroll.model.TapType
 import nl.utwente.doomscroll.service.EventLoggerHolder
+import nl.utwente.doomscroll.service.UsageTrackerHolder
 
 class TouchGestureService : AccessibilityService() {
 
@@ -59,6 +60,9 @@ class TouchGestureService : AccessibilityService() {
                 event.className?.toString()?.let { cls ->
                     currentActivityClass = cls
                 }
+                UsageTrackerHolder.tracker?.onForegroundAppFromAccessibility(
+                    currentForegroundApp, currentActivityClass
+                )
             }
 
             AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
@@ -150,10 +154,25 @@ class TouchGestureService : AccessibilityService() {
 
     private fun getViewDescription(node: AccessibilityNodeInfo?): String? {
         if (node == null) return null
-        val cd = node.contentDescription?.toString()
-        if (cd != null) return cd
-        val viewId = node.viewIdResourceName
-        if (viewId != null) return viewId
+        node.contentDescription?.toString()?.let { return it }
+        // Traverse children — click events often land on a wrapper, not the labeled child
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            child.contentDescription?.toString()?.let {
+                child.recycle()
+                return it
+            }
+            child.recycle()
+        }
+        // Try parent — sometimes the click lands on the icon inside a labeled button
+        node.parent?.let { parent ->
+            parent.contentDescription?.toString()?.let {
+                parent.recycle()
+                return it
+            }
+            parent.recycle()
+        }
+        node.viewIdResourceName?.let { return it }
         return node.className?.toString()
     }
 
