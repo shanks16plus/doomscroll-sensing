@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Doomscroll Sensing</string>
+    <string name="accessibility_service_description">Detects scroll and tap gestures for the research study. Does not read screen content.</string>
 </resources>

@@ -1,0 +1,48 @@
+{
+  "com.instagram.android": "SOCIAL",
+  "com.zhiliaoapp.musically": "SOCIAL",
+  "com.twitter.android": "SOCIAL",
+  "com.reddit.frontpage": "SOCIAL",
+  "com.facebook.katana": "SOCIAL",
+  "com.snapchat.android": "SOCIAL",
+  "com.facebook.orca": "MESSAGING",
+  "com.google.android.youtube": "ENTERTAINMENT",
+
+  "nl.rtv.nieuws": "NEWS",
+  "nl.nos.app": "NEWS",
+  "nl.sanoma.android.nu": "NEWS",
+  "com.nrc.next": "NEWS",
+  "nl.telegraaf": "NEWS",
+  "uk.co.bbc.news": "NEWS",
+  "com.reuters.news": "NEWS",
+  "com.aljazeera.mobile": "NEWS",
+
+  "com.android.chrome": "BROWSER",
+  "org.mozilla.firefox": "BROWSER",
+  "com.microsoft.emmx": "BROWSER",
+  "com.opera.browser": "BROWSER",
+  "com.brave.browser": "BROWSER",
+
+  "com.whatsapp": "MESSAGING",
+  "org.telegram.messenger": "MESSAGING",
+  "org.thoughtcrime.securesms": "MESSAGING",
+  "com.discord": "MESSAGING",
+
+  "com.microsoft.teams": "PRODUCTIVE",
+  "com.slack": "PRODUCTIVE",
+  "com.google.android.gm": "PRODUCTIVE",
+  "com.microsoft.office.outlook": "PRODUCTIVE",
+  "com.google.android.calendar": "PRODUCTIVE",
+  "com.google.android.apps.docs": "PRODUCTIVE",
+
+  "com.netflix.mediaclient": "ENTERTAINMENT",
+  "com.spotify.music": "ENTERTAINMENT",
+  "com.google.android.apps.youtube.music": "ENTERTAINMENT",
+  "com.amazon.avod.thirdpartyclient": "ENTERTAINMENT",
+
+  "com.google.android.apps.maps": "UTILITY",
+  "com.android.settings": "UTILITY",
+  "com.google.android.GoogleCamera": "UTILITY",
+  "com.android.vending": "UTILITY",
+  "com.android.dialer": "UTILITY"
+}
