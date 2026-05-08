@@ -51,6 +51,10 @@ class UsageTracker(
     /** Resume polling when the screen turns on. */
     fun onScreenOn() {
         if (pollJob?.isActive == true) return
+        // Immediate one-shot poll before the loop starts — closes the scheduling-delay
+        // window where currentForegroundApp would be stale until the first coroutine tick,
+        // particularly important when the accessibility service is disabled.
+        pollForegroundApp()
         pollJob = scope.launch {
             while (isActive) {
                 pollForegroundApp()

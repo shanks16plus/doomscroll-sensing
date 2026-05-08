@@ -16,6 +16,7 @@ import android.view.accessibility.AccessibilityManager
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import nl.utwente.doomscroll.model.PauseReason
@@ -41,6 +42,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var textExportResult: TextView
     private lateinit var bannerAccessibility: View
     private lateinit var btnFixAccessibility: Button
+
+    // True when the last export stopped an active logging session.
+    // Controls whether the start button reads "Resume Logging" or "Start Logging".
+    private var exportStoppedLogging = false
 
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { updateUI() }
@@ -129,6 +134,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun startLogging() {
         val pid = prefs.participantId ?: return
+        exportStoppedLogging = false   // clear "resume" state regardless of how we got here
         prefs.loggingEnabled = true
         SensorLoggingService.start(this, pid)
     }
@@ -139,12 +145,30 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startExport() {
+        if (prefs.loggingEnabled) {
+            // Warn the researcher before stopping an active session
+            AlertDialog.Builder(this)
+                .setTitle("Export data")
+                .setMessage(
+                    "This will stop logging temporarily. " +
+                    "After export completes, tap Resume Logging to continue " +
+                    "if you're continuing the study."
+                )
+                .setPositiveButton("Export") { _, _ -> doExport(wasLogging = true) }
+                .setNegativeButton("Cancel", null)
+                .show()
+        } else {
+            doExport(wasLogging = false)
+        }
+    }
+
+    private fun doExport(wasLogging: Boolean) {
         btnExport.isEnabled = false
         textExportResult.text = "Preparing export…"
 
-        // Stop logging first so the active file is cleanly closed before we read it.
-        if (prefs.loggingEnabled) {
+        if (wasLogging) {
             stopLogging()
+            exportStoppedLogging = true
             updateUI()
         }
 
@@ -161,6 +185,8 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 textExportResult.text = formatExportResult(result)
                 btnExport.isEnabled = true
+                // Refresh so the toggle button shows "Resume Logging" if applicable
+                updateUI()
             }
         }.start()
     }
@@ -220,8 +246,13 @@ class MainActivity : AppCompatActivity() {
             btnToggle.text = "Long-press to Stop"
             btnPause.visibility = View.VISIBLE
         } else {
-            textStatus.text = if (allGranted) "Status: ready to start" else "Status: grant all permissions first"
-            btnToggle.text = "Start Logging"
+            textStatus.text = when {
+                exportStoppedLogging -> "Status: logging stopped for export"
+                allGranted -> "Status: ready to start"
+                else -> "Status: grant all permissions first"
+            }
+            // "Resume Logging" makes it clear this is a continuation, not a fresh start
+            btnToggle.text = if (exportStoppedLogging) "Resume Logging" else "Start Logging"
             btnPause.visibility = View.GONE
         }
     }
