@@ -12,5 +12,6 @@ class BootReceiver : BroadcastReceiver() {
         val pid = prefs.participantId ?: return
         if (!prefs.loggingEnabled) return
         SensorLoggingService.start(context, pid)
+        ServiceWatchdog.schedule(context)
     }
 }

@@ -82,4 +82,18 @@ sealed class SensorEvent {
         @Json(name = "participant_id") override val participantId: String,
         val reason: PauseReason
     ) : SensorEvent()
+
+    /**
+     * Emitted every 60 seconds while the service is running.
+     * Use this to distinguish "service was down" (no heartbeats) from "screen was off"
+     * (heartbeats present, no sensor/interaction events).
+     */
+    @JsonClass(generateAdapter = true)
+    data class Heartbeat(
+        @Json(name = "timestamp_ms") override val timestampMs: Long,
+        @Json(name = "participant_id") override val participantId: String,
+        @Json(name = "screen_on") val screenOn: Boolean,
+        @Json(name = "accessibility_enabled") val accessibilityEnabled: Boolean,
+        @Json(name = "free_storage_mb") val freeStorageMb: Long
+    ) : SensorEvent()
 }

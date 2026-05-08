@@ -95,7 +95,8 @@ class EventLogger(
         var seq = 0
         var file: File
         do {
-            val suffix = if (seq == 0) "" else "_$seq"
+            // Zero-pad so files sort lexicographically: _001 < _002 < … < _010 < _011
+            val suffix = if (seq == 0) "" else "_${seq.toString().padStart(3, '0')}"
             file = File(logDir, "${participantId}_${date}${suffix}.jsonl")
             seq++
         } while (file.exists())

@@ -17,6 +17,7 @@ object EventJsonAdapter {
             .withSubtype(SensorEvent.Gyroscope::class.java, "gyroscope")
             .withSubtype(SensorEvent.LoggingPause::class.java, "logging_pause")
             .withSubtype(SensorEvent.LoggingResume::class.java, "logging_resume")
+            .withSubtype(SensorEvent.Heartbeat::class.java, "heartbeat")
 
     val moshi: Moshi = Moshi.Builder()
         .add(polymorphicFactory)

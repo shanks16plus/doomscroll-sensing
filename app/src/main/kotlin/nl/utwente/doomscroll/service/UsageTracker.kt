@@ -39,6 +39,24 @@ class UsageTracker(
 
     fun stop() {
         pollJob?.cancel()
+        pollJob = null
+    }
+
+    /** Pause polling while the screen is off to avoid unnecessary wakeups. */
+    fun onScreenOff() {
+        pollJob?.cancel()
+        pollJob = null
+    }
+
+    /** Resume polling when the screen turns on. */
+    fun onScreenOn() {
+        if (pollJob?.isActive == true) return
+        pollJob = scope.launch {
+            while (isActive) {
+                pollForegroundApp()
+                delay(1000)
+            }
+        }
     }
 
     fun onForegroundAppFromAccessibility(packageName: String, activityClass: String? = null) {

@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
+import android.view.View
 import android.view.accessibility.AccessibilityManager
 import android.widget.Button
 import android.widget.TextView
@@ -38,6 +39,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnPause: Button
     private lateinit var btnExport: Button
     private lateinit var textExportResult: TextView
+    private lateinit var bannerAccessibility: View
+    private lateinit var btnFixAccessibility: Button
 
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { updateUI() }
@@ -61,6 +64,8 @@ class MainActivity : AppCompatActivity() {
         btnPause = findViewById(R.id.btn_pause)
         btnExport = findViewById(R.id.btn_export)
         textExportResult = findViewById(R.id.text_export_result)
+        bannerAccessibility = findViewById(R.id.banner_accessibility_warning)
+        btnFixAccessibility = findViewById(R.id.btn_fix_accessibility)
 
         btnUsageStats.setOnClickListener {
             startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
@@ -108,17 +113,12 @@ class MainActivity : AppCompatActivity() {
             updateUI()
         }
 
+        btnFixAccessibility.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+
         btnExport.setOnClickListener {
-            btnExport.isEnabled = false
-            textExportResult.text = "Exporting…"
-            val result = ExportManager(this).export()
-            if (result.exported == 0 && result.skipped == 0) {
-                textExportResult.text = "No log files found."
-            } else {
-                textExportResult.text = "Exported ${result.exported} file(s), " +
-                        "skipped ${result.skipped}.\nPath: ${result.path}"
-            }
-            btnExport.isEnabled = true
+            startExport()
         }
     }
 
@@ -136,6 +136,53 @@ class MainActivity : AppCompatActivity() {
     private fun stopLogging() {
         prefs.loggingEnabled = false
         SensorLoggingService.stop(this)
+    }
+
+    private fun startExport() {
+        btnExport.isEnabled = false
+        textExportResult.text = "Preparing export…"
+
+        // Stop logging first so the active file is cleanly closed before we read it.
+        if (prefs.loggingEnabled) {
+            stopLogging()
+            updateUI()
+        }
+
+        // Run I/O off the main thread. Wait up to 3 s for the service to finish closing.
+        Thread {
+            var waited = 0
+            while (EventLoggerHolder.logger != null && waited < 3_000) {
+                Thread.sleep(100)
+                waited += 100
+            }
+
+            val result = ExportManager(this).export()
+
+            runOnUiThread {
+                textExportResult.text = formatExportResult(result)
+                btnExport.isEnabled = true
+            }
+        }.start()
+    }
+
+    private fun formatExportResult(result: ExportManager.ExportResult): String = when {
+        result.exported == 0 && result.skipped == 0 ->
+            "No log files found."
+        result.exported == 0 && result.error != null ->
+            "Export failed: ${result.error}"
+        else -> buildString {
+            append("Exported ${result.exported} file(s)")
+            if (result.skipped > 0) append(", skipped ${result.skipped}")
+            append("\n${formatBytes(result.totalBytes)}")
+            result.path?.let { append("\nPath: $it") }
+            if (result.error != null) append("\n⚠ Partial failure: ${result.error}")
+        }
+    }
+
+    private fun formatBytes(bytes: Long): String = when {
+        bytes < 1_024 -> "$bytes B"
+        bytes < 1_048_576 -> "%.1f KB".format(bytes / 1_024.0)
+        else -> "%.1f MB".format(bytes / 1_048_576.0)
     }
 
     private fun updateUI() {
@@ -157,6 +204,10 @@ class MainActivity : AppCompatActivity() {
         val allGranted = usageOk && accessOk && notifOk && batteryOk
         btnToggle.isEnabled = allGranted
 
+        // Accessibility warning banner — shown when logging is active but the service died
+        bannerAccessibility.visibility =
+            if (prefs.loggingEnabled && !accessOk) View.VISIBLE else View.GONE
+
         val logger = EventLoggerHolder.logger
         if (prefs.loggingEnabled) {
             if (logger?.isPaused == true) {
@@ -167,11 +218,11 @@ class MainActivity : AppCompatActivity() {
                 btnPause.text = "Pause Logging"
             }
             btnToggle.text = "Long-press to Stop"
-            btnPause.visibility = android.view.View.VISIBLE
+            btnPause.visibility = View.VISIBLE
         } else {
             textStatus.text = if (allGranted) "Status: ready to start" else "Status: grant all permissions first"
             btnToggle.text = "Start Logging"
-            btnPause.visibility = android.view.View.GONE
+            btnPause.visibility = View.GONE
         }
     }
 

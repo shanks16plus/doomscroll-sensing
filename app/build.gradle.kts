@@ -41,6 +41,7 @@ dependencies {
     implementation(libs.moshi.kotlin)
     implementation(libs.moshi.adapters)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.work.runtime)
 
     testImplementation(libs.junit)
     testImplementation(libs.moshi)
