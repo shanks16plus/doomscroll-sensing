@@ -1,6 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#6200EE</color>
-    <color name="colorPrimaryDark">#3700B3</color>
-    <color name="colorAccent">#03DAC5</color>
+    <!-- Backgrounds -->
+    <color name="bg_primary">#0A0D14</color>
+    <color name="bg_card">#131929</color>
+    <color name="bg_card_alt">#0D1520</color>
+
+    <!-- Accents -->
+    <color name="accent_blue">#4C8EFF</color>
+    <color name="accent_cyan">#00D4FF</color>
+    <color name="accent_green">#00E676</color>
+    <color name="accent_amber">#FFB300</color>
+    <color name="accent_red">#FF5252</color>
+
+    <!-- Text -->
+    <color name="text_primary">#E8F0FE</color>
+    <color name="text_secondary">#6B8CC4</color>
+    <color name="text_muted">#3D5278</color>
+
+    <!-- Borders -->
+    <color name="border_subtle">#1E3052</color>
+    <color name="border_accent">#2979FF</color>
+
+    <!-- Legacy aliases for Material theme attributes -->
+    <color name="colorPrimary">#4C8EFF</color>
+    <color name="colorPrimaryDark">#2962FF</color>
+    <color name="colorAccent">#00D4FF</color>
 </resources>

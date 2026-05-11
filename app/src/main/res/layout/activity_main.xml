@@ -1,133 +1,523 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp">
+    android:background="@color/bg_primary"
+    android:fillViewport="true"
+    android:scrollbars="none">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:gravity="center_horizontal">
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="52dp"
+        android:paddingBottom="40dp">
+
+        <!-- ── HEADER ── -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="DOOMSCROLL"
+            android:textColor="@color/text_primary"
+            android:textSize="30sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.12" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Doomscroll Sensing"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="20dp"
+            android:text="SENSING ENGINE"
+            android:textColor="@color/accent_cyan"
+            android:textSize="11sp"
+            android:letterSpacing="0.35" />
 
-        <TextView
-            android:id="@+id/text_participant_id"
+        <!-- Participant ID pill -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="28dp"
+            android:background="@drawable/bg_chip"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="7dp"
+            android:paddingBottom="7dp">
+
+            <TextView
+                android:id="@+id/text_participant_id"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ID  ···"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:letterSpacing="0.05"
+                android:fontFamily="monospace" />
+        </LinearLayout>
+
+        <!-- ── STATUS HERO CARD ── -->
+        <LinearLayout
+            android:id="@+id/card_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Participant ID: —"
-            android:textSize="14sp"
-            android:layout_marginBottom="24dp" />
+            android:orientation="vertical"
+            android:background="@drawable/bg_card_status"
+            android:layout_marginBottom="24dp">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Permissions"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
+            <!-- Pulse rings + dot centred in this FrameLayout -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="130dp">
 
-        <Button
-            android:id="@+id/btn_usage_stats"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="1. Grant Usage Access"
-            android:layout_marginBottom="4dp" />
+                <View
+                    android:id="@+id/pulse_ring_3"
+                    android:layout_width="160dp"
+                    android:layout_height="160dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/shape_pulse_ring"
+                    android:alpha="0" />
 
-        <Button
-            android:id="@+id/btn_accessibility"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="2. Enable Accessibility Service"
-            android:layout_marginBottom="4dp" />
+                <View
+                    android:id="@+id/pulse_ring_2"
+                    android:layout_width="110dp"
+                    android:layout_height="110dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/shape_pulse_ring"
+                    android:alpha="0" />
 
-        <Button
-            android:id="@+id/btn_notifications"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="3. Allow Notifications"
-            android:layout_marginBottom="4dp" />
+                <View
+                    android:id="@+id/pulse_ring_1"
+                    android:layout_width="70dp"
+                    android:layout_height="70dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/shape_pulse_ring"
+                    android:alpha="0" />
 
-        <Button
-            android:id="@+id/btn_battery"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="4. Disable Battery Optimization"
-            android:layout_marginBottom="24dp" />
+                <View
+                    android:id="@+id/status_dot"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/shape_status_dot_inactive" />
+            </FrameLayout>
 
-        <!-- Warning banner: visible when logging is active but accessibility service has died -->
+            <!-- Status labels at bottom of card -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingTop="4dp"
+                android:paddingBottom="22dp">
+
+                <TextView
+                    android:id="@+id/text_status_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="STANDBY"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.2" />
+
+                <TextView
+                    android:id="@+id/text_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="Grant permissions to begin"
+                    android:textColor="@color/text_muted"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ── ACCESSIBILITY WARNING ── -->
         <LinearLayout
             android:id="@+id/banner_accessibility_warning"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#FFCC00"
-            android:padding="12dp"
-            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_warning_card"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="14dp"
+            android:paddingBottom="14dp"
+            android:layout_marginBottom="16dp"
             android:visibility="gone">
 
             <TextView
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="⚠ Gesture logging stopped — accessibility service is disabled"
-                android:textStyle="bold"
-                android:textColor="#000000"
-                android:layout_marginBottom="8dp" />
+                android:layout_weight="1"
+                android:text="⚠  Gesture logging stopped — accessibility service disabled"
+                android:textColor="@color/accent_amber"
+                android:textSize="12sp"
+                android:textStyle="bold" />
 
             <Button
                 android:id="@+id/btn_fix_accessibility"
-                android:layout_width="match_parent"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Re-enable Accessibility Service" />
+                android:minWidth="0dp"
+                android:text="FIX"
+                android:textColor="@color/accent_amber"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.1"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp" />
         </LinearLayout>
 
+        <!-- ── SYSTEM ACCESS HEADER ── -->
         <TextView
-            android:id="@+id/text_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Status: not logging"
-            android:textSize="16sp"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="10dp"
+            android:text="SYSTEM ACCESS"
+            android:textColor="@color/text_muted"
+            android:textSize="11sp"
+            android:letterSpacing="0.2" />
 
+        <!-- ── USAGE STATS TILE ── -->
+        <LinearLayout
+            android:id="@+id/btn_usage_stats"
+            android:layout_width="match_parent"
+            android:layout_height="68dp"
+            android:background="@drawable/bg_permission_tile"
+            android:foreground="?attr/selectableItemBackground"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginBottom="8dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_usage_stats"
+                android:background="@drawable/bg_icon_container"
+                android:padding="8dp"
+                android:layout_marginEnd="14dp"
+                android:scaleType="fitCenter" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Usage Statistics"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Track foreground apps"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/chip_usage_stats"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_chip_needed"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:text="NEEDED"
+                android:textColor="@color/accent_blue"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.08" />
+        </LinearLayout>
+
+        <!-- ── ACCESSIBILITY TILE ── -->
+        <LinearLayout
+            android:id="@+id/btn_accessibility"
+            android:layout_width="match_parent"
+            android:layout_height="68dp"
+            android:background="@drawable/bg_permission_tile"
+            android:foreground="?attr/selectableItemBackground"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginBottom="8dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_accessibility"
+                android:background="@drawable/bg_icon_container"
+                android:padding="8dp"
+                android:layout_marginEnd="14dp"
+                android:scaleType="fitCenter" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Accessibility Service"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Detect taps and scrolls"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/chip_accessibility"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_chip_needed"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:text="NEEDED"
+                android:textColor="@color/accent_blue"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.08" />
+        </LinearLayout>
+
+        <!-- ── NOTIFICATIONS TILE ── -->
+        <LinearLayout
+            android:id="@+id/btn_notifications"
+            android:layout_width="match_parent"
+            android:layout_height="68dp"
+            android:background="@drawable/bg_permission_tile"
+            android:foreground="?attr/selectableItemBackground"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginBottom="8dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_notifications"
+                android:background="@drawable/bg_icon_container"
+                android:padding="8dp"
+                android:layout_marginEnd="14dp"
+                android:scaleType="fitCenter" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Notifications"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Foreground service indicator"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/chip_notifications"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_chip_needed"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:text="NEEDED"
+                android:textColor="@color/accent_blue"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.08" />
+        </LinearLayout>
+
+        <!-- ── BATTERY TILE ── -->
+        <LinearLayout
+            android:id="@+id/btn_battery"
+            android:layout_width="match_parent"
+            android:layout_height="68dp"
+            android:background="@drawable/bg_permission_tile"
+            android:foreground="?attr/selectableItemBackground"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginBottom="28dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_battery"
+                android:background="@drawable/bg_icon_container"
+                android:padding="8dp"
+                android:layout_marginEnd="14dp"
+                android:scaleType="fitCenter" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Battery Optimization"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Keep service alive in background"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/chip_battery"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_chip_needed"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:text="NEEDED"
+                android:textColor="@color/accent_blue"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.08" />
+        </LinearLayout>
+
+        <!-- ── PRIMARY CTA ── -->
         <Button
             android:id="@+id/btn_toggle_logging"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Start Logging"
-            android:textSize="18sp"
-            android:enabled="false" />
+            android:layout_height="52dp"
+            android:background="@drawable/bg_button_primary"
+            android:text="START LOGGING"
+            android:textColor="@color/btn_primary_text"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.1"
+            android:enabled="false"
+            android:stateListAnimator="@null" />
 
+        <!-- ── PAUSE BUTTON ── -->
         <Button
             android:id="@+id/btn_pause"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Pause Logging"
-            android:textSize="16sp"
-            android:visibility="gone"
-            android:layout_marginTop="8dp" />
-
-        <Button
-            android:id="@+id/btn_export"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Export Data"
-            android:textSize="16sp"
-            android:layout_marginTop="24dp" />
-
-        <TextView
-            android:id="@+id/text_export_result"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="52dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_button_secondary"
+            android:text="PAUSE LOGGING"
+            android:textColor="@color/btn_secondary_text"
             android:textSize="14sp"
-            android:layout_marginTop="8dp" />
+            android:textStyle="bold"
+            android:letterSpacing="0.08"
+            android:visibility="gone"
+            android:stateListAnimator="@null" />
+
+        <!-- ── EXPORT CARD ── -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_export_card"
+            android:padding="16dp"
+            android:layout_marginTop="24dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_export"
+                    android:layout_marginEnd="10dp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="DATA EXPORT"
+                    android:textColor="@color/text_muted"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.2" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btn_export"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_button_secondary"
+                android:text="EXPORT TO DOWNLOADS"
+                android:textColor="@color/btn_secondary_text"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:stateListAnimator="@null" />
+
+            <TextView
+                android:id="@+id/text_export_result"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
+        </LinearLayout>
 
     </LinearLayout>
 </ScrollView>

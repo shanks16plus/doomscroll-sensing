@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Soft glow halo -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#4400E676" />
+        </shape>
+    </item>
+    <!-- Solid inner dot -->
+    <item
+        android:bottom="4dp"
+        android:left="4dp"
+        android:right="4dp"
+        android:top="4dp">
+        <shape android:shape="oval">
+            <solid android:color="@color/accent_green" />
+        </shape>
+    </item>
+</layer-list>

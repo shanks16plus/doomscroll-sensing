@@ -2,4 +2,12 @@
 <resources>
     <dimen name="base_grid_size">8dp</dimen>
     <dimen name="doub_grid_size">16dp</dimen>
+    <dimen name="card_radius">16dp</dimen>
+    <dimen name="card_radius_large">20dp</dimen>
+    <dimen name="card_padding">16dp</dimen>
+    <dimen name="section_spacing">24dp</dimen>
+    <dimen name="tile_height">68dp</dimen>
+    <dimen name="button_height">52dp</dimen>
+    <dimen name="icon_container_size">36dp</dimen>
+    <dimen name="page_horizontal_padding">20dp</dimen>
 </resources>
