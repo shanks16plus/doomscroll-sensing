@@ -1,60 +1,32 @@
 # Doomscroll Sensing App
 
-Passive sensor and usage data logger for Android, built as research instrumentation for two parallel Bachelor's theses at the University of Twente (EEMCS faculty).
+Passive sensor and behaviour logger for Android. Built as research instrumentation for a Bachelor's thesis at the University of Twente.
 
-## Purpose
+## What it does
 
-Logs accelerometer, gyroscope, screen state, foreground app, and gesture events on provided Google Pixel 4 phones distributed to study participants for ~1 week. Data supports:
+Runs silently in the background on a provided phone for the duration of a study week. Collects sensor and usage data locally — no network, no cloud.
 
-- **Project A** — doomscrolling episode detection from passive sensing
-- **Project B** — compulsive smartphone-checking pattern detection from passive sensing
+## What it collects
 
-## Privacy by design
-
-- Zero network behaviour — no cloud, no telemetry, no upload
-- All logs encrypted at rest (AES-256 via AndroidX Security)
-- No raw touch coordinates, screen content, keystrokes, or location
+- Accelerometer and gyroscope (50 Hz, screen-on only)
+- Screen on / off / unlock events
+- Foreground app and app switches
+- Scroll events and direction
+- Tap and double-tap interactions (social apps only)
 - Logging pauses on password fields and lock screen
-- Data export via USB only
+
+All data is encrypted on-device (AES-256) and exported via USB at the end of the study.
 
 ## Tech stack
 
-- Kotlin, single-activity architecture
-- Target: Google Pixel 4 (Android 13, API 33)
-- Min SDK 26, compile SDK 35
-- Foreground service + AccessibilityService
-- Moshi for JSONL serialisation
-- Coroutines for async I/O
+- Kotlin — Android API 26–35, target Pixel 4 (Android 13)
+- Foreground Service + AccessibilityService
+- Moshi (JSONL serialisation)
+- AndroidX Security (EncryptedFile, EncryptedSharedPreferences)
+- WorkManager (watchdog), Coroutines
 
-## Building
+## Build
 
 ```bash
 ./gradlew assembleDebug
 ```
-
-## Repo structure
-
-```
-app/src/main/kotlin/nl/utwente/doomscroll/
-  ├── MainActivity.kt
-  ├── service/          # Foreground sensor logging service
-  ├── accessibility/    # Gesture detection AccessibilityService
-  ├── storage/          # Encrypted JSONL event logger
-  ├── model/            # Event data model (sealed class hierarchy)
-  ├── classifier/       # App categorisation lookup
-  └── util/
-app/src/main/assets/
-  └── app_categories.json
-docs/
-  ├── SCHEMA.docx              # Data schema specification
-  ├── ETHICS.docx              # Privacy and ethics commitments
-  ├── SETUP.md                 # Researcher setup and data collection guide
-  └── PARTICIPANT_GUIDE.md     # Handout for study participants
-tools/
-  └── synthetic_data_generator.py
-```
-
-## Researchers
-
-- Shashank Bajoria — doomscrolling detection
-- Supervisor: Gwenn Englebienne (University of Twente)
