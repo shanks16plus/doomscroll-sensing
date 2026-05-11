@@ -18,8 +18,9 @@ object InteractionClassifier {
 
     // Explicit exclusions checked BEFORE keyword matching to avoid false positives.
     // "dislike" contains "like" → would fire LIKE without this guard.
+    // "dislike_button" covers resource-ID fragments from getViewDescription.
     private val EXCLUDE_KEYWORDS = setOf(
-        "dislike"
+        "dislike", "dislike_button", "btn_dislike"
     )
 
     // Platform-specific accessibility labels verified against real APKs:
@@ -31,9 +32,11 @@ object InteractionClassifier {
     // Reddit    : "Upvote", "upvoted"
     private val LIKE_KEYWORDS = setOf(
         "like", "liked", "love", "heart", "favourite", "favorite",
-        "thumbs up",                        // YouTube
-        "haha", "wow", "sad", "angry", "care",  // Facebook reactions
-        "upvote", "upvoted"                 // Reddit
+        "thumbs up",                               // YouTube button label
+        "haha", "wow", "sad", "angry", "care",     // Facebook reactions
+        "upvote", "upvoted",                       // Reddit
+        "like_button", "btn_like",                 // resource-ID fragments (any platform)
+        "video was liked", "video liked"           // YouTube TYPE_ANNOUNCEMENT text
     )
 
     // Instagram: "Comment", TikTok: "Comment", YouTube: "Comment", X: "Reply",

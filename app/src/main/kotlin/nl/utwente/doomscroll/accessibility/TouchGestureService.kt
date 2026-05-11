@@ -31,30 +31,35 @@ class TouchGestureService : AccessibilityService() {
 
     private var lastClickTimestamp: Long = 0
     private var lastClickApp: String = ""
-    private var lastScrollTimestamp: Long = 0
 
-    // ---- Scroll direction tracking ----
-    // Maps view resource ID → last known scrollY (for API <28 fallback).
+    // ── Dwell time tracking ─────────────────────────────────────────────────
+    // Set to System.currentTimeMillis() when the SCROLL_END debounce fires.
+    // The NEXT SCROLL_START subtracts this to get "time paused between bursts".
+    @Volatile private var lastScrollEndTs: Long = 0
+
+    // ── Scroll direction tracking ───────────────────────────────────────────
     private val scrollYMap = mutableMapOf<String, Int>()
-    // SCROLL_END debounce: emit 500 ms after the last scroll event so we get a real end time.
     private var scrollDebounceJob: Job? = null
 
-    // ---- Touch interaction state for double-tap via TYPE_TOUCH_INTERACTION_START ----
+    // ── Touch state for TYPE_TOUCH_INTERACTION_START double-tap ────────────
     private var lastTouchStartTs: Long = 0
     private var lastTouchStartApp: String = ""
     private var hadScrollSinceTouchStart: Boolean = false
 
     override fun onServiceConnected() {
         serviceInfo = AccessibilityServiceInfo().apply {
-            eventTypes = AccessibilityEvent.TYPE_VIEW_SCROLLED or
-                    AccessibilityEvent.TYPE_VIEW_CLICKED or
-                    AccessibilityEvent.TYPE_VIEW_FOCUSED or
-                    AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
-                    AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED or
-                    AccessibilityEvent.TYPE_TOUCH_INTERACTION_START
+            eventTypes =
+                AccessibilityEvent.TYPE_VIEW_SCROLLED          or
+                AccessibilityEvent.TYPE_VIEW_CLICKED           or
+                AccessibilityEvent.TYPE_VIEW_FOCUSED           or
+                AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED   or
+                AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED or
+                AccessibilityEvent.TYPE_TOUCH_INTERACTION_START or
+                AccessibilityEvent.TYPE_ANNOUNCEMENT           // ← catches YouTube "Liked" etc.
             feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
-            flags = AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS or
-                    AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+            flags =
+                AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS or
+                AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
             notificationTimeout = 50
         }
 
@@ -68,14 +73,17 @@ class TouchGestureService : AccessibilityService() {
         val ts = System.currentTimeMillis()
 
         when (event.eventType) {
+
+            // ── App foreground tracking ─────────────────────────────────────
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                 event.packageName?.toString()?.let { pkg -> currentForegroundApp = pkg }
-                event.className?.toString()?.let { cls -> currentActivityClass = cls }
+                event.className?.toString()?.let  { cls -> currentActivityClass = cls }
                 UsageTrackerHolder.tracker?.onForegroundAppFromAccessibility(
                     currentForegroundApp, currentActivityClass
                 )
             }
 
+            // ── Password / comment-field focus ──────────────────────────────
             AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
                 val node = event.source
                 val nowPassword = isPasswordNode(node)
@@ -89,10 +97,12 @@ class TouchGestureService : AccessibilityService() {
                     scope.launch { logger.resume(PauseReason.PASSWORD_FIELD) }
                 }
 
-                if (nowEditText && !nowPassword && currentForegroundApp in InteractionClassifier.SOCIAL_APPS) {
+                if (nowEditText && !nowPassword &&
+                    currentForegroundApp in InteractionClassifier.SOCIAL_APPS) {
                     scope.launch {
                         logger.log(SensorEvent.TapEvent(
-                            timestampMs = ts, participantId = participantId,
+                            timestampMs = ts,
+                            participantId = participantId,
                             tapType = TapType.SINGLE,
                             foregroundApp = currentForegroundApp,
                             interactionType = InteractionType.COMMENT_OPEN,
@@ -103,15 +113,19 @@ class TouchGestureService : AccessibilityService() {
                 node?.recycle()
             }
 
+            // ── Scroll ──────────────────────────────────────────────────────
             AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
                 hadScrollSinceTouchStart = true
 
                 val direction = inferScrollDirection(event)
-                val dwellTime = InteractionClassifier.computeDwellTime(ts, lastScrollTimestamp)
+                // Dwell = gap from when the PREVIOUS scroll burst ended to now.
+                // lastScrollEndTs is set in the SCROLL_END debounce below.
+                val dwellTime = if (lastScrollEndTs > 0L) ts - lastScrollEndTs else null
 
                 scope.launch {
                     logger.log(SensorEvent.ScrollEvent(
-                        timestampMs = ts, participantId = participantId,
+                        timestampMs = ts,
+                        participantId = participantId,
                         event = ScrollEventType.SCROLL_START,
                         direction = direction,
                         foregroundApp = currentForegroundApp,
@@ -119,25 +133,28 @@ class TouchGestureService : AccessibilityService() {
                     ))
                 }
 
-                // Debounce SCROLL_END: cancel any pending end and schedule a new one 500 ms
-                // from the last scroll event. This gives a real end timestamp rather than the
-                // old synthetic ts+1 approach.
+                // Debounce SCROLL_END: reset the 500 ms window on every raw scroll event.
+                // Captures the last direction and app at schedule time.
                 scrollDebounceJob?.cancel()
-                val endTs = ts
                 val endDir = direction
                 val endApp = currentForegroundApp
                 scrollDebounceJob = scope.launch {
                     delay(500)
+                    // Record when this burst ended — used for dwell on the NEXT burst.
+                    val now = System.currentTimeMillis()
+                    lastScrollEndTs = now
                     logger.log(SensorEvent.ScrollEvent(
-                        timestampMs = endTs, participantId = participantId,
+                        timestampMs = now,
+                        participantId = participantId,
                         event = ScrollEventType.SCROLL_END,
                         direction = endDir,
-                        foregroundApp = endApp
+                        foregroundApp = endApp,
+                        dwellTimeMs = null   // dwell belongs on SCROLL_START, not END
                     ))
                 }
-                lastScrollTimestamp = ts
             }
 
+            // ── Tap / click on social apps ──────────────────────────────────
             AccessibilityEvent.TYPE_VIEW_CLICKED -> {
                 if (currentForegroundApp in InteractionClassifier.SOCIAL_APPS) {
                     val node = event.source
@@ -149,7 +166,8 @@ class TouchGestureService : AccessibilityService() {
 
                     scope.launch {
                         logger.log(SensorEvent.TapEvent(
-                            timestampMs = ts, participantId = participantId,
+                            timestampMs = ts,
+                            participantId = participantId,
                             tapType = tapType,
                             foregroundApp = currentForegroundApp,
                             interactionType = finalInteraction,
@@ -158,23 +176,44 @@ class TouchGestureService : AccessibilityService() {
                     }
                     lastClickTimestamp = ts
                     lastClickApp = currentForegroundApp
-                    // Reset touch-start state so TYPE_TOUCH_INTERACTION_START doesn't
-                    // emit a duplicate double-tap for the same gesture.
-                    lastTouchStartTs = 0
+                    lastTouchStartTs = 0   // prevent duplicate from TOUCH_INTERACTION_START
                     node?.recycle()
                 }
             }
 
+            // ── Announcement events (most reliable LIKE source on YouTube) ──
+            //
+            // YouTube fires TYPE_ANNOUNCEMENT when an action completes — e.g.:
+            //   "Video was liked"  /  "Liked"  →  LIKE
+            //   "Subscribed to channel"          →  FOLLOW
+            // This catches cases where the like button has no content description
+            // and TYPE_VIEW_CLICKED only gets "android.widget.Button".
+            AccessibilityEvent.TYPE_ANNOUNCEMENT -> {
+                if (currentForegroundApp in InteractionClassifier.SOCIAL_APPS) {
+                    val text = event.text
+                        ?.mapNotNull { it?.toString()?.trim() }
+                        ?.filter { it.isNotEmpty() }
+                        ?.joinToString(" ")
+                        ?.takeIf { it.isNotEmpty() } ?: return
+
+                    val interaction = InteractionClassifier.classifyInteraction(text)
+                    if (interaction != InteractionType.OTHER) {
+                        scope.launch {
+                            logger.log(SensorEvent.TapEvent(
+                                timestampMs = ts,
+                                participantId = participantId,
+                                tapType = TapType.SINGLE,
+                                foregroundApp = currentForegroundApp,
+                                interactionType = interaction,
+                                viewDescription = "announcement:$text"
+                            ))
+                        }
+                    }
+                }
+            }
+
+            // ── Double-tap on non-clickable views (Instagram/TikTok feed) ───
             AccessibilityEvent.TYPE_TOUCH_INTERACTION_START -> {
-                // Fires even when the target has clickable=false (e.g. Instagram feed photo),
-                // so catches double-tap-to-like where TYPE_VIEW_CLICKED is unreliable.
-                // Only double-taps are logged here — single taps come from TYPE_VIEW_CLICKED.
-                // If TYPE_VIEW_CLICKED also fires (clickable=true), it resets lastTouchStartTs
-                // above, preventing a duplicate here.
-                //
-                // Known limitation: on some social apps, every feed tap fires a scroll event
-                // (momentum cancel), setting hadScrollSinceTouchStart=true and suppressing
-                // detection. Treat view_description="touch_double_tap" events as best-effort.
                 if (currentForegroundApp in InteractionClassifier.SOCIAL_APPS) {
                     val dt = ts - lastTouchStartTs
                     if (dt in 1 until InteractionClassifier.DOUBLE_TAP_WINDOW_MS &&
@@ -182,7 +221,8 @@ class TouchGestureService : AccessibilityService() {
                         !hadScrollSinceTouchStart) {
                         scope.launch {
                             logger.log(SensorEvent.TapEvent(
-                                timestampMs = ts, participantId = participantId,
+                                timestampMs = ts,
+                                participantId = participantId,
                                 tapType = TapType.DOUBLE,
                                 foregroundApp = currentForegroundApp,
                                 interactionType = InteractionType.DOUBLE_TAP_LIKE,
@@ -198,18 +238,8 @@ class TouchGestureService : AccessibilityService() {
         }
     }
 
-    // ---- Scroll direction helpers ----
+    // ── Scroll direction ────────────────────────────────────────────────────
 
-    /**
-     * Infer scroll direction using the best available method.
-     *
-     * API 28+: getScrollDeltaY() — signed delta since the previous event.
-     *   Positive = down, negative = up. Falls through to position tracking if delta is 0
-     *   (can happen for horizontal-only scrollables or first event on a view).
-     *
-     * Fallback: compare scrollY against the stored previous value for the same view ID.
-     *   Returns NONE when no previous value exists or the view has no resource ID.
-     */
     private fun inferScrollDirection(event: AccessibilityEvent): ScrollDirection {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             val dy = event.scrollDeltaY
@@ -220,48 +250,90 @@ class TouchGestureService : AccessibilityService() {
         val prevY = scrollYMap[viewId]
         scrollYMap[viewId] = currentY
         return when {
-            prevY == null -> ScrollDirection.NONE
-            currentY > prevY -> ScrollDirection.DOWN
-            currentY < prevY -> ScrollDirection.UP
-            else -> ScrollDirection.NONE
+            prevY == null      -> ScrollDirection.NONE
+            currentY > prevY   -> ScrollDirection.DOWN
+            currentY < prevY   -> ScrollDirection.UP
+            else               -> ScrollDirection.NONE
         }
     }
 
-    private fun isPasswordNode(node: AccessibilityNodeInfo?): Boolean = node?.isPassword == true
+    // ── View description ────────────────────────────────────────────────────
 
-    private fun isEditTextField(node: AccessibilityNodeInfo?): Boolean {
-        val className = node?.className?.toString() ?: return false
-        return className.contains("EditText") || className.contains("AutoCompleteTextView")
-    }
-
+    /**
+     * Best-effort semantic label for an accessibility node.
+     *
+     * Priority order:
+     *  1. contentDescription on the node itself
+     *  2. contentDescription or text on descendant nodes (depth ≤ 3)
+     *  3. contentDescription or text on ancestor nodes (depth ≤ 3)
+     *  4. viewIdResourceName, local part only  (e.g. "like_button")
+     *  5. node text
+     *  6. class name as last resort
+     */
     private fun getViewDescription(node: AccessibilityNodeInfo?): String? {
         if (node == null) return null
-        node.contentDescription?.toString()?.let { return it }
-        findDescriptionInChildren(node, 2)?.let { return it }
-        findDescriptionInParents(node, 2)?.let { return it }
-        node.viewIdResourceName?.let { return it }
+
+        // 1. Own content description
+        node.contentDescription?.toString()?.takeIf { it.isNotBlank() }?.let { return it }
+
+        // 2. Children (depth 3, checks both contentDescription and text)
+        findSemanticLabelInChildren(node, depth = 3)?.let { return it }
+
+        // 3. Ancestors
+        findSemanticLabelInParents(node, depth = 3)?.let { return it }
+
+        // 4. Resource ID — strip "package:id/" prefix so "like_button" is the classifier input.
+        //    InteractionClassifier already has "like" as a keyword, so this covers
+        //    resource IDs like "com.google.android.youtube:id/like_button".
+        node.viewIdResourceName?.let { res ->
+            val local = res.substringAfterLast("/").ifBlank { res }
+            return local
+        }
+
+        // 5. Button text
+        node.text?.toString()?.takeIf { it.isNotBlank() }?.let { return it }
+
+        // 6. Class name
         return node.className?.toString()
     }
 
-    private fun findDescriptionInChildren(node: AccessibilityNodeInfo, depth: Int): String? {
+    private fun findSemanticLabelInChildren(node: AccessibilityNodeInfo, depth: Int): String? {
         if (depth <= 0) return null
         for (i in 0 until node.childCount) {
             val child = node.getChild(i) ?: continue
-            child.contentDescription?.toString()?.let { child.recycle(); return it }
-            findDescriptionInChildren(child, depth - 1)?.let { child.recycle(); return it }
+            val label =
+                child.contentDescription?.toString()?.takeIf { it.isNotBlank() }
+                    ?: child.text?.toString()?.takeIf { it.isNotBlank() }
+            if (label != null) { child.recycle(); return label }
+            findSemanticLabelInChildren(child, depth - 1)?.let { child.recycle(); return it }
             child.recycle()
         }
         return null
     }
 
-    private fun findDescriptionInParents(node: AccessibilityNodeInfo, depth: Int): String? {
+    private fun findSemanticLabelInParents(node: AccessibilityNodeInfo, depth: Int): String? {
         if (depth <= 0) return null
         val parent = node.parent ?: return null
-        parent.contentDescription?.toString()?.let { parent.recycle(); return it }
-        val result = findDescriptionInParents(parent, depth - 1)
+        val label =
+            parent.contentDescription?.toString()?.takeIf { it.isNotBlank() }
+                ?: parent.text?.toString()?.takeIf { it.isNotBlank() }
+        if (label != null) { parent.recycle(); return label }
+        val result = findSemanticLabelInParents(parent, depth - 1)
         parent.recycle()
         return result
     }
+
+    // ── Focus helpers ───────────────────────────────────────────────────────
+
+    private fun isPasswordNode(node: AccessibilityNodeInfo?): Boolean =
+        node?.isPassword == true
+
+    private fun isEditTextField(node: AccessibilityNodeInfo?): Boolean {
+        val cls = node?.className?.toString() ?: return false
+        return cls.contains("EditText") || cls.contains("AutoCompleteTextView")
+    }
+
+    // ── Lifecycle ───────────────────────────────────────────────────────────
 
     override fun onInterrupt() {}
 
