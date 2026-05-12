@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import nl.utwente.doomscroll.model.PauseReason
 import nl.utwente.doomscroll.model.ScreenState
 import nl.utwente.doomscroll.model.SensorEvent
+import nl.utwente.doomscroll.model.UnlockTrigger
 import nl.utwente.doomscroll.storage.EventLogger
 
 class ScreenStateReceiver(
@@ -40,24 +41,43 @@ class ScreenStateReceiver(
                     scope.launch { logger.pause(PauseReason.KEYGUARD) }
                 }
             }
+
             Intent.ACTION_SCREEN_OFF -> {
                 logScreenState(logger, ts, ScreenState.OFF)
                 onScreenOff?.invoke()
                 scope.launch { logger.pause(PauseReason.KEYGUARD) }
             }
+
             Intent.ACTION_USER_PRESENT -> {
-                logScreenState(logger, ts, ScreenState.UNLOCKED)
-                scope.launch { logger.resume(PauseReason.KEYGUARD) }
+                // Query NotificationMonitor for the most recent notification before this unlock.
+                // If one arrived within TRIGGER_WINDOW_MS → NOTIFICATION; otherwise SPONTANEOUS.
+                val recent = NotificationMonitor.mostRecentBefore(ts)
+                val trigger = if (recent != null) UnlockTrigger.NOTIFICATION
+                              else                UnlockTrigger.SPONTANEOUS
+
+                val event = SensorEvent.ScreenStateEvent(
+                    timestampMs       = ts,
+                    participantId     = participantId,
+                    state             = ScreenState.UNLOCKED,
+                    unlockTrigger     = trigger,
+                    triggerApp        = recent?.packageName,
+                    notificationAgeMs = recent?.let { ts - it.timestampMs }
+                )
+                scope.launch {
+                    logger.log(event)
+                    logger.resume(PauseReason.KEYGUARD)
+                }
             }
         }
     }
 
     private fun logScreenState(logger: EventLogger, ts: Long, state: ScreenState) {
-        val event = SensorEvent.ScreenStateEvent(
-            timestampMs = ts,
-            participantId = participantId,
-            state = state
-        )
-        scope.launch { logger.log(event) }
+        scope.launch {
+            logger.log(SensorEvent.ScreenStateEvent(
+                timestampMs   = ts,
+                participantId = participantId,
+                state         = state
+            ))
+        }
     }
 }

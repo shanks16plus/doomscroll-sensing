@@ -19,6 +19,13 @@ enum class PauseReason {
     PASSWORD_FIELD, KEYGUARD, SENSITIVE_APP, USER_REQUEST
 }
 
+/**
+ * Whether a screen unlock was preceded by a notification within
+ * [NotificationMonitor.TRIGGER_WINDOW_MS] of the unlock timestamp.
+ * Null on SCREEN_ON and SCREEN_OFF events.
+ */
+enum class UnlockTrigger { NOTIFICATION, SPONTANEOUS }
+
 enum class InteractionType {
     LIKE, DOUBLE_TAP_LIKE, COMMENT_OPEN, SHARE, FOLLOW, SAVE, OTHER
 }

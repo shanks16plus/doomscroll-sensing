@@ -21,7 +21,7 @@ import java.util.TimeZone
 class EventLogger(
     private val context: Context,
     private val participantId: String,
-    private val schemaVersion: String = "1.1.0"
+    private val schemaVersion: String = "1.2.0"
 ) {
     private val logDir = File(context.filesDir, "logs").also { it.mkdirs() }
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {

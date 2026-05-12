@@ -55,6 +55,22 @@
             </intent-filter>
         </receiver>
 
+        <!--
+            NotificationListenerService — records ONLY notification arrival timestamp
+            and source package name. No content, title, or body is ever read.
+            Android binds this automatically once the user grants Notification Access
+            in Settings → Special App Access → Notification Access.
+        -->
+        <service
+            android:name=".service.NotificationMonitor"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
     </application>
 
 </manifest>

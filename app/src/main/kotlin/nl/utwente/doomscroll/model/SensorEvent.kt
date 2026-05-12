@@ -18,7 +18,14 @@ sealed class SensorEvent {
     data class ScreenStateEvent(
         @Json(name = "timestamp_ms") override val timestampMs: Long,
         @Json(name = "participant_id") override val participantId: String,
-        val state: ScreenState
+        val state: ScreenState,
+        /** Only set when state == UNLOCKED. NOTIFICATION if a notification arrived within
+         *  NotificationMonitor.TRIGGER_WINDOW_MS before the unlock; SPONTANEOUS otherwise. */
+        @Json(name = "unlock_trigger") val unlockTrigger: UnlockTrigger? = null,
+        /** Package name of the app whose notification triggered the unlock. Null if SPONTANEOUS. */
+        @Json(name = "trigger_app") val triggerApp: String? = null,
+        /** Milliseconds between notification arrival and unlock. Null if SPONTANEOUS. */
+        @Json(name = "notification_age_ms") val notificationAgeMs: Long? = null
     ) : SensorEvent()
 
     @JsonClass(generateAdapter = true)

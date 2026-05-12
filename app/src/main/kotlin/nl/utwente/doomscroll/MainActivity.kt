@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
+import androidx.core.app.NotificationManagerCompat
 import android.view.View
 import android.view.accessibility.AccessibilityManager
 import android.view.animation.DecelerateInterpolator
@@ -50,12 +51,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnAccessibility: View
     private lateinit var btnNotifications: View
     private lateinit var btnBattery: View
+    private lateinit var btnNotificationListener: View
 
     // Permission chips
     private lateinit var chipUsageStats: TextView
     private lateinit var chipAccessibility: TextView
     private lateinit var chipNotifications: TextView
     private lateinit var chipBattery: TextView
+    private lateinit var chipNotificationListener: TextView
 
     // Accessibility warning
     private lateinit var bannerAccessibility: View
@@ -100,16 +103,18 @@ class MainActivity : AppCompatActivity() {
         textStatus       = findViewById(R.id.text_status)
 
         // Permission tiles
-        btnUsageStats    = findViewById(R.id.btn_usage_stats)
-        btnAccessibility = findViewById(R.id.btn_accessibility)
-        btnNotifications = findViewById(R.id.btn_notifications)
-        btnBattery       = findViewById(R.id.btn_battery)
+        btnUsageStats            = findViewById(R.id.btn_usage_stats)
+        btnAccessibility         = findViewById(R.id.btn_accessibility)
+        btnNotifications         = findViewById(R.id.btn_notifications)
+        btnBattery               = findViewById(R.id.btn_battery)
+        btnNotificationListener  = findViewById(R.id.btn_notification_listener)
 
         // Permission chips
-        chipUsageStats    = findViewById(R.id.chip_usage_stats)
-        chipAccessibility = findViewById(R.id.chip_accessibility)
-        chipNotifications = findViewById(R.id.chip_notifications)
-        chipBattery       = findViewById(R.id.chip_battery)
+        chipUsageStats           = findViewById(R.id.chip_usage_stats)
+        chipAccessibility        = findViewById(R.id.chip_accessibility)
+        chipNotifications        = findViewById(R.id.chip_notifications)
+        chipBattery              = findViewById(R.id.chip_battery)
+        chipNotificationListener = findViewById(R.id.chip_notification_listener)
 
         // Accessibility warning
         bannerAccessibility = findViewById(R.id.banner_accessibility_warning)
@@ -145,6 +150,10 @@ class MainActivity : AppCompatActivity() {
                     data = Uri.parse("package:$packageName")
                 }
             )
+        }
+
+        btnNotificationListener.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
 
         btnToggle.setOnClickListener {
@@ -274,20 +283,22 @@ class MainActivity : AppCompatActivity() {
         // Show only last 8 chars so the pill stays compact
         textParticipantId.text = "ID  ${pid.takeLast(8).uppercase()}"
 
-        val usageOk  = hasUsageStatsPermission()
-        val accessOk = isAccessibilityServiceEnabled()
-        val notifOk  = if (Build.VERSION.SDK_INT >= 33) {
+        val usageOk          = hasUsageStatsPermission()
+        val accessOk         = isAccessibilityServiceEnabled()
+        val notifOk          = if (Build.VERSION.SDK_INT >= 33) {
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
                     PackageManager.PERMISSION_GRANTED
         } else true
-        val batteryOk = isBatteryOptimizationDisabled()
+        val batteryOk        = isBatteryOptimizationDisabled()
+        val notifListenerOk  = isNotificationListenerEnabled()
 
-        updatePermChip(chipUsageStats,    usageOk)
-        updatePermChip(chipAccessibility, accessOk)
-        updatePermChip(chipNotifications, notifOk)
-        updatePermChip(chipBattery,       batteryOk)
+        updatePermChip(chipUsageStats,           usageOk)
+        updatePermChip(chipAccessibility,        accessOk)
+        updatePermChip(chipNotifications,        notifOk)
+        updatePermChip(chipBattery,              batteryOk)
+        updatePermChip(chipNotificationListener, notifListenerOk)
 
-        val allGranted = usageOk && accessOk && notifOk && batteryOk
+        val allGranted = usageOk && accessOk && notifOk && batteryOk && notifListenerOk
         btnToggle.isEnabled = allGranted
 
         // Accessibility warning banner
@@ -448,4 +459,7 @@ class MainActivity : AppCompatActivity() {
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         return pm.isIgnoringBatteryOptimizations(packageName)
     }
+
+    private fun isNotificationListenerEnabled(): Boolean =
+        NotificationManagerCompat.getEnabledListenerPackages(this).contains(packageName)
 }
