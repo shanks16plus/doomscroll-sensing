@@ -43,7 +43,7 @@ class ExportManager(private val context: Context) {
                 val values = ContentValues().apply {
                     put(MediaStore.Downloads.DISPLAY_NAME, file.name)
                     put(MediaStore.Downloads.MIME_TYPE, "application/x-ndjson")
-                    put(MediaStore.Downloads.RELATIVE_PATH, "Download/doomscroll_export")
+                    put(MediaStore.Downloads.RELATIVE_PATH, "Download/psu_export")
                 }
                 val uri = context.contentResolver.insert(
                     MediaStore.Downloads.EXTERNAL_CONTENT_URI, values
@@ -65,14 +65,14 @@ class ExportManager(private val context: Context) {
                 lastError = e.message
             }
         }
-        return ExportResult(exported, skipped, totalBytes, "Downloads/doomscroll_export", lastError)
+        return ExportResult(exported, skipped, totalBytes, "Downloads/psu_export", lastError)
     }
 
     /** API 26–28 fallback: direct File API (WRITE_EXTERNAL_STORAGE declared with maxSdkVersion=28). */
     private fun exportViaDirectFile(files: Array<File>): ExportResult {
         val exportDir = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            "doomscroll_export"
+            "psu_export"
         )
         exportDir.mkdirs()
 

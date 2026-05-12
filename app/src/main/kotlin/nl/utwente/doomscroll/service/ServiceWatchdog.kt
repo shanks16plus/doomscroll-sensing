@@ -16,7 +16,7 @@ class ServiceWatchdog(
 ) : CoroutineWorker(ctx, params) {
 
     companion object {
-        private const val WORK_NAME = "doomscroll_watchdog"
+        private const val WORK_NAME = "psu_watchdog"
 
         fun schedule(context: Context) {
             val request = PeriodicWorkRequestBuilder<ServiceWatchdog>(15, TimeUnit.MINUTES)

@@ -30,10 +30,10 @@ import nl.utwente.doomscroll.storage.EventLogger
 class SensorLoggingService : Service(), SensorEventListener {
 
     companion object {
-        const val CHANNEL_ID = "doomscroll_logging"
+        const val CHANNEL_ID = "psu_logging"
         const val NOTIFICATION_ID = 1
         const val EXTRA_PARTICIPANT_ID = "participant_id"
-        const val TAG = "DoomScroll"
+        const val TAG = "PSUSensing"
 
         // 20,000 µs = 50 Hz target. Using explicit period rather than SENSOR_DELAY_GAME
         // (which is an opaque hint). On Pixel 4 this reliably delivers ~50 Hz.

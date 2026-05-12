@@ -1,6 +1,6 @@
-# Doomscroll Sensing App
+# PSU Sensing App
 
-Passive sensor and behaviour logger for Android. Built as research instrumentation for a Bachelor's thesis at the University of Twente.
+Passive sensor and behaviour logger for Android. Built as research instrumentation for two Bachelor's theses at the University of Twente — one studying doomscrolling, one studying compulsive smartphone use. Both fall under the umbrella of Problematic Smartphone Use (PSU).
 
 ## What it does
 

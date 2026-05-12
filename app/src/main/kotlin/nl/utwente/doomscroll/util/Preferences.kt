@@ -9,7 +9,7 @@ class Preferences(context: Context) {
 
     private val masterKey = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
     private val prefs: SharedPreferences = EncryptedSharedPreferences.create(
-        "doomscroll_prefs",
+        "psu_prefs",
         masterKey,
         context,
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
