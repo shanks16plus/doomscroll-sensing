@@ -259,6 +259,8 @@ class MainActivity : AppCompatActivity() {
     private fun formatExportResult(result: ExportManager.ExportResult): String = when {
         result.exported == 0 && result.skipped == 0 ->
             "No log files found."
+        result.exported == 0 && result.skipped > 0 ->
+            "All ${result.skipped} file(s) failed to decrypt — they may be from a previous install. Delete and re-run logging."
         result.exported == 0 && result.error != null ->
             "Export failed: ${result.error}"
         else -> buildString {
